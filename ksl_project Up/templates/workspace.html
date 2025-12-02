@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLIVE - Sign Language Instant Visualizer & Extractor</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('index') }}" class="navbar-brand">
+                <img src="{{ url_for('static', filename='images/SLIVE Log.png') }}" alt="SLIVE Logo" class="brand-logo">
+                <span class="brand-text">SLIVE</span>
+            </a>
+            <ul class="navbar-menu">
+                <li class="navbar-item">
+                    <a href="{{ url_for('workspace') }}" class="navbar-link active">
+                        <span class="nav-icon">🚀</span>
+                        <span>워크스페이스</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="header-section">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 0.5rem;">
+                    <img src="{{ url_for('static', filename='images/SLIVE Log.png') }}" alt="SLIVE Logo" style="height: 80px; width: auto;">
+                    <h1 style="font-size: 4em; margin: 0;">SLIVE</h1>
+                </div>
+                <p style="margin-top: -0.5rem; font-size: 0.95rem; opacity: 0.7;">
+                    Sign Language Instant Visualizer & Extractor
+                </p>
+                <p>데이터 수집부터 학습, 실시간 통역까지 한 곳에서 처리하는 올인원 플랫폼</p>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem; text-align: center; color: #333;">
+                    <strong>Team HandCode</strong> | 
+                    김지훈 <span style="font-size: 0.8em; color: #666;">Kim Ji Hoon</span>, 
+                    이민용 <span style="font-size: 0.8em; color: #666;">Lee Min Yong</span>, 
+                    조우석 <span style="font-size: 0.8em; color: #666;">Cho Ou Seok</span>
+                </p>
+            </div>
+        </header>
+
+        <!-- Progress Flow -->
+        <div class="progress-flow-container">
+            <div class="progress-flow">
+                <div class="flow-step" id="flowCollect">
+                    <div class="step-icon">📊</div>
+                    <div class="step-label">데이터 수집</div>
+                </div>
+                <div class="flow-connector"></div>
+                <div class="flow-step" id="flowTrain">
+                    <div class="step-icon">🧠</div>
+                    <div class="step-label">모델 학습</div>
+                </div>
+                <div class="flow-connector"></div>
+                <div class="flow-step" id="flowTranslate">
+                    <div class="step-icon">🤟</div>
+                    <div class="step-label">실시간 통역</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav-container">
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="collect">
+                    <span class="tab-icon">📊</span>
+                    <span>데이터 수집</span>
+                </button>
+                <button class="tab-btn" data-tab="train">
+                    <span class="tab-icon">🧠</span>
+                    <span>모델 학습</span>
+                </button>
+                <button class="tab-btn" data-tab="translate">
+                    <span class="tab-icon">🤟</span>
+                    <span>실시간 통역</span>
+                </button>
+                <button class="tab-btn" data-tab="conversation">
+                    <span class="tab-icon">💬</span>
+                    <span>대화 번역(Beta)</span>
+                </button>
+                <button class="tab-btn" data-tab="manage">
+                    <span class="tab-icon">⚙️</span>
+                    <span>모델 관리</span>
+                </button>
+                <button class="tab-btn" data-tab="viewer3d">
+                    <span class="tab-icon">🎨</span>
+                    <span>3D 뷰어 (Beta)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab 1: Data Collection -->
+        <div class="tab-content active" id="tab-collect">
+            <div class="grid-layout">
+                <!-- Left Panel: Camera & Controls -->
+                <div class="left-panel">
+                    <div class="video-card">
+                        <div class="video-header">
+                            <div class="recording-indicator" id="recordingIndicator">
+                                <div class="recording-dot"></div>
+                                <span>녹화 중</span>
+                            </div>
+                            <div class="status-badges">
+                                <div class="hand-detection-badge" id="handDetectionBadge">
+                                    <span class="hand-icon">✋</span>
+                                    <span id="handDetectionText">손 감지 대기</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="video-wrapper">
+                            <video id="videoCollect" autoplay playsinline muted></video>
+                            <canvas id="canvasCollect"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Live Progress -->
+                    <div class="glass-panel live-progress-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <span class="icon">📈</span>
+                                <span id="currentGestureProgress">수집 진행률</span>
+                            </div>
+                            <div class="panel-actions">
+                                <div class="target-display">
+                                    <span>목표:</span>
+                                    <span class="target-value" id="targetValue">800</span>
+                                </div>
+                                <button class="btn-icon-small" id="editTargetBtn" title="목표 수정">✏️</button>
+                            </div>
+                        </div>
+                        <div class="progress-section">
+                            <div class="progress-bar-wrapper">
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" id="liveProgressBarFill"></div>
+                                </div>
+                                <span class="progress-text" id="liveProgressText">0 / 800 (0%)</span>
+                            </div>
+                            <div class="progress-info">
+                                <span id="progressGestureName" class="gesture-name-display">동작을 선택하세요</span>
+                                <span class="progress-remaining" id="progressRemaining">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="glass-panel controls-panel">
+                        <div class="control-group">
+                            <div class="control-item">
+                                <div class="control-label">
+                                    <span>🎨</span>
+                                    <span>손 스켈레톤 표시</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="skeletonToggleCollect" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="control-item">
+                                <div class="control-label">
+                                    <span>💾</span>
+                                    <span>자동 저장 (100개마다)</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="autoSaveToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid-mini">
+                            <div class="stat-mini">
+                                <span class="stat-value" id="quickSessionCount">0</span>
+                                <span class="stat-label">이번 세션</span>
+                            </div>
+                            <div class="stat-mini">
+                                <span class="stat-value" id="quickTotalCount">0</span>
+                                <span class="stat-label">전체 수집</span>
+                            </div>
+                            <div class="stat-mini">
+                                <span class="stat-value" id="quickFPS">0</span>
+                                <span class="stat-label">FPS</span>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="startCollectBtn">
+                                <span class="btn-icon">📹</span> 카메라 시작
+                            </button>
+                            <button class="btn btn-success" id="recordBtn" disabled>
+                                <span class="btn-icon">🔴</span> 녹화 시작
+                            </button>
+                            <button class="btn btn-danger" id="stopCollectBtn" disabled>
+                                <span class="btn-icon">⏹️</span> 정지
+                            </button>
+                        </div>
+
+                        <div class="shortcuts-info">
+                            <div class="shortcut-row">
+                                <span>녹화 시작/중지</span>
+                                <kbd>Space</kbd>
+                            </div>
+                            <div class="shortcut-row">
+                                <span>데이터 저장</span>
+                                <kbd>Ctrl+S</kbd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Gesture Selection & Data -->
+                <div class="right-panel">
+                    <div class="card full-height-card">
+                        <div class="card-header">
+                            <h3>🎯 수집할 동작 선택</h3>
+                            <div class="search-box">
+                                <input type="text" id="gestureSearch" placeholder="동작 검색..." class="search-input">
+                                <span class="search-icon">🔍</span>
+                            </div>
+                        </div>
+                        <div class="card-body scrollable-body">
+                            <div class="gesture-grid" id="gestureGrid"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>데이터 관리</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="data-status">
+                                <div class="status-row">
+                                    <span>현재 동작</span>
+                                    <span id="currentGesture" class="highlight-text">선택 안됨</span>
+                                </div>
+                                <div class="status-row">
+                                    <span>이번 세션</span>
+                                    <span id="sessionCount">0</span>
+                                </div>
+                                <div class="status-row">
+                                    <span>전체 수집</span>
+                                    <span id="totalCount">0</span>
+                                </div>
+                                <div class="progress-bar-track small">
+                                    <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+                                </div>
+                                <p id="recordingStatus" class="status-message">대기 중...</p>
+                            </div>
+                            <div class="action-buttons vertical">
+                                <button class="btn btn-success" id="saveDataBtn">
+                                    <span>💾</span> 데이터 저장
+                                </button>
+                                <button class="btn btn-warning" id="resetDataBtn">
+                                    <span>🗑️</span> 데이터 초기화
+                                </button>
+                            </div>
+                            <p class="help-text">
+                                초기화 클릭 시: 확인(전체 삭제) / 취소(특정 동작 삭제)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Model Training -->
+        <div class="tab-content" id="tab-train">
+            <div class="training-grid">
+                <!-- Left Panel: Chart & Logs -->
+                <div class="training-visuals">
+                    <!-- Training Progress -->
+                    <div class="card" id="trainingProgress" style="display: none;">
+                        <div class="card-header">
+                            <h3>⏳ 학습 진행 상황</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-section">
+                                <div class="info-row">
+                                    <span>Epoch:</span>
+                                    <span id="epochText">0/0</span>
+                                </div>
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" id="epochProgressBar" style="width: 0%;"></div>
+                                </div>
+                                <div class="stats-grid-mini">
+                                    <div class="stat-mini">
+                                        <span class="stat-label">학습 정확도</span>
+                                        <span class="stat-value" id="trainAccuracy">0%</span>
+                                    </div>
+                                    <div class="stat-mini">
+                                        <span class="stat-label">검증 정확도</span>
+                                        <span class="stat-value" id="valAccuracy">0%</span>
+                                    </div>
+                                    <div class="stat-mini">
+                                        <span class="stat-label">학습 손실</span>
+                                        <span class="stat-value" id="trainLoss">0</span>
+                                    </div>
+                                    <div class="stat-mini">
+                                        <span class="stat-label">검증 손실</span>
+                                        <span class="stat-value" id="valLoss">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card training-chart-card" id="trainingChartSection" style="display: none;">
+                        <div class="card-header">
+                            <h3>📈 실시간 학습 그래프</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="trainingChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card training-log-card">
+                        <div class="card-header">
+                            <h3>📝 학습 로그</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="terminal-window" id="trainingLog">
+                                <div class="terminal-line system">> 학습 준비 완료...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Settings -->
+                <div class="training-settings-panel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⚙️ 학습 설정</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="setting-group">
+                                <label class="setting-label">프리셋 선택</label>
+                                <select id="trainingPreset" class="custom-select">
+                                    <option value="fast">🚀 빠르게 (20 Epochs)</option>
+                                    <option value="balanced" selected>⚖️ 균형있게 (50 Epochs)</option>
+                                    <option value="accurate">🎯 정확하게 (100 Epochs)</option>
+                                    <option value="custom">🛠️ 사용자 정의</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-group">
+                                <div class="slider-header">
+                                    <label>Epochs (반복 횟수)</label>
+                                    <input type="number" id="epochsInput" value="50" min="10" max="500"
+                                        class="number-input">
+                                </div>
+                                <input type="range" id="epochsSlider" min="10" max="500" value="50" step="10"
+                                    class="range-slider">
+                            </div>
+
+                            <div class="setting-group">
+                                <div class="slider-header">
+                                    <label>Batch Size</label>
+                                    <input type="number" id="batchSizeInput" value="32" min="16" max="128"
+                                        class="number-input">
+                                </div>
+                                <input type="range" id="batchSizeSlider" min="16" max="128" value="32" step="16"
+                                    class="range-slider">
+                            </div>
+
+                            <div class="setting-group">
+                                <div class="slider-header">
+                                    <label>Learning Rate</label>
+                                    <input type="number" id="learningRateInput" value="0.001" min="0.0001" max="0.01"
+                                        step="0.0001" class="number-input">
+                                </div>
+                                <input type="range" id="learningRateSlider" min="0.0001" max="0.01" value="0.001"
+                                    step="0.0001" class="range-slider">
+                            </div>
+
+                            <div class="setting-group">
+                                <div class="slider-header">
+                                    <label>검증 데이터 비율</label>
+                                    <span id="validationSplitValue">20%</span>
+                                </div>
+                                <input type="range" id="validationSplitSlider" min="0.1" max="0.4" value="0.2"
+                                    step="0.05" class="range-slider">
+                            </div>
+
+                            <div class="dataset-info-card">
+                                <h4>📊 데이터셋 현황</h4>
+                                <div class="info-row">
+                                    <span>총 데이터:</span>
+                                    <span id="datasetSize">0</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>제스처 종류:</span>
+                                    <span id="gestureTypes">0</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>학습 준비:</span>
+                                    <span id="trainingReady" class="text-muted">대기 중</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">모델 이름 (선택사항)</label>
+                                <input type="text" id="modelNameInput" class="modal-input" placeholder="비워두면 자동 생성">
+                            </div>
+
+                            <div class="action-buttons vertical">
+                                <button class="btn btn-primary" id="startTrainBtn">
+                                    <span class="btn-icon">🚀</span> 학습 시작
+                                </button>
+                                <button class="btn btn-danger" id="stopTrainBtn" disabled>
+                                    <span class="btn-icon">⏹️</span> 중지
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Real-time Translation -->
+        <div class="tab-content" id="tab-translate">
+            <div class="grid-layout">
+                <!-- Left Panel: Video & Result -->
+                <div class="left-panel">
+                    <div class="video-card">
+                        <div class="video-header">
+                            <div class="status-badges">
+                                <div class="status-badge" id="statusBadge">
+                                    <span class="status-indicator"></span>
+                                    <span id="statusText">대기 중</span>
+                                </div>
+                                <div class="hand-detection-badge" id="handDetectionBadgeTranslate">
+                                    <span class="hand-icon">✋</span>
+                                    <span id="handDetectionTextTranslate">손 감지 대기</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="video-wrapper">
+                            <video id="videoTranslate" autoplay playsinline muted></video>
+                            <canvas id="canvasTranslate"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Result Display -->
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h3>🎯 인식 결과</h3>
+                        </div>
+                        <div class="result-display">
+                            <div class="result-text-large" id="resultText">대기 중...</div>
+                            <div class="confidence-section">
+                                <div class="confidence-label">신뢰도</div>
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" id="confidenceFill" style="width: 0%;"></div>
+                                </div>
+                                <div class="confidence-row">
+                                    <span id="confidenceValue">0%</span>
+                                    <span id="confidenceStatus">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Predictions -->
+                    <div class="glass-panel" id="topPredictions" style="display: none;">
+                        <div class="panel-header">
+                            <h3>📊 상위 예측</h3>
+                        </div>
+                        <div id="topPredictionsList" class="predictions-list">
+                            <div class="empty-state">통역을 시작하면 예측이 표시됩니다.</div>
+                        </div>
+                    </div>
+
+                    <!-- Competition Mode -->
+                    <div class="glass-panel" id="competitionMode" style="display: none;">
+                        <div class="panel-header">
+                            <h3>🏆 모델 경쟁 결과</h3>
+                        </div>
+                        <div id="competitionResults" class="competition-results">
+                            <!-- Results injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Model Competition Setup -->
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h3>⚙️ 모델 경쟁 설정</h3>
+                        </div>
+                        <div id="competitionModels" class="model-checkbox-container">
+                            <!-- Model checkboxes injected by JS -->
+                        </div>
+                        <button class="btn btn-primary" id="startCompetitionBtn">
+                            🏁 경쟁 시작
+                        </button>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="glass-panel controls-panel">
+                        <div class="control-group">
+                            <div class="control-item">
+                                <label class="control-label">사용할 모델</label>
+                                <select id="modelSelect" class="custom-select">
+                                    <option value="">로딩 중...</option>
+                                </select>
+                            </div>
+                            <div class="control-item">
+                                <div class="control-label">
+                                    <span>🎨</span>
+                                    <span>손 스켈레톤 표시</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="skeletonToggleTranslate" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="control-item">
+                                <div class="control-label">
+                                    <span>🔊</span>
+                                    <span>음성(TTS)</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="ttsToggleTranslate" title="인식 결과를 음성으로 재생합니다" aria-label="TTS 재생 토글">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid-mini">
+                            <div class="stat-mini">
+                                <span class="stat-value" id="translateCount">0</span>
+                                <span class="stat-label">인식 횟수</span>
+                            </div>
+                            <div class="stat-mini">
+                                <span class="stat-value" id="translateConfidence">0%</span>
+                                <span class="stat-label">평균 신뢰도</span>
+                            </div>
+                            <div class="stat-mini">
+                                <span class="stat-value" id="translateFPS">0</span>
+                                <span class="stat-label">FPS</span>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="startTranslateBtn">
+                                <span class="btn-icon">🎥</span> 통역 시작
+                            </button>
+                            <button class="btn btn-danger" id="stopTranslateBtn" disabled>
+                                <span class="btn-icon">⏹️</span> 정지
+                            </button>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" id="toggleDetailBtn">
+                                📊 상세히 보기
+                            </button>
+                            <button class="btn btn-secondary" id="toggleCompetitionBtn">
+                                🏆 경쟁 모드
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: History -->
+                <div class="right-panel">
+                    <div class="card full-height-card">
+                        <div class="card-header">
+                            <h3>🕒 인식 기록</h3>
+                            <button class="btn-icon-small" id="clearHistoryBtn" title="기록 지우기">🗑️</button>
+                        </div>
+                        <div class="card-body scrollable-body" id="historyContainer">
+                            <div class="history-empty">아직 인식 기록이 없습니다</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Conversation Translation -->
+        <div class="tab-content" id="tab-conversation">
+            <div class="grid-layout">
+                <!-- Left Panel: Video & Sentence -->
+                <div class="left-panel">
+                    <div class="video-card">
+                        <div class="video-header">
+                            <div class="status-badges">
+                                <div class="status-badge" id="statusBadgeConversation">
+                                    <span class="status-indicator"></span>
+                                    <span id="statusTextConversation">대기 중</span>
+                                </div>
+                                <div class="hand-detection-badge" id="handDetectionBadgeConversation">
+                                    <span class="hand-icon">✋</span>
+                                    <span id="handDetectionTextConversation">손 감지 대기</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="video-wrapper">
+                            <video id="videoConversation" autoplay playsinline muted></video>
+                            <canvas id="canvasConversation"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Sentence Display -->
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h3>📝 생성된 문장</h3>
+                            <button class="btn-icon-small" id="clearSentenceBtn" title="문장 초기화">🗑️</button>
+                        </div>
+                        <div class="result-display">
+                            <div class="result-text-large" id="sentenceText" style="min-height: 80px; line-height: 1.6;">
+                                대기 중...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Word Buffer -->
+                    <div class="glass-panel">
+                        <div class="panel-header">
+                            <h3>🎯 인식된 단어</h3>
+                            <button class="btn-icon-small" id="clearWordsBtn" title="단어 초기화">🗑️</button>
+                        </div>
+                        <div id="wordBuffer" class="predictions-list" style="min-height: 100px;">
+                            <div class="empty-state">단어를 인식하면 여기에 표시됩니다.</div>
+                        </div>
+                        <div class="action-buttons" style="margin-top: 15px;">
+                            <button class="btn btn-success" id="generateSentenceBtn" disabled>
+                                <span class="btn-icon">✨</span> 문장 생성
+                            </button>
+                            <button class="btn btn-secondary" id="undoWordBtn" disabled>
+                                <span class="btn-icon">↩️</span> 실행 취소
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="glass-panel controls-panel">
+                        <div class="control-group">
+                            <div class="control-item">
+                                <label class="control-label">사용할 모델</label>
+                                <select id="modelSelectConversation" class="custom-select">
+                                    <option value="">로딩 중...</option>
+                                </select>
+                            </div>
+                            <div class="control-item">
+                                <div class="control-label">
+                                    <span>🎨</span>
+                                    <span>손 스켈레톤 표시</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="skeletonToggleConversation" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="control-item">
+                                <div class="control-label">
+                                    <span>🔊</span>
+                                    <span>음성(TTS)</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="ttsToggleConversation" title="대화 인식 결과를 음성으로 재생합니다" aria-label="대화 TTS 재생 토글">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="control-item">
+                                <div class="control-label">
+                                    <span>⚡</span>
+                                    <span>자동 인식 모드</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="autoRecognitionToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid-mini">
+                            <div class="stat-mini">
+                                <span class="stat-value" id="conversationWordCount">0</span>
+                                <span class="stat-label">인식 단어</span>
+                            </div>
+                            <div class="stat-mini">
+                                <span class="stat-value" id="conversationSentenceCount">0</span>
+                                <span class="stat-label">생성 문장</span>
+                            </div>
+                            <div class="stat-mini">
+                                <span class="stat-value" id="conversationFPS">0</span>
+                                <span class="stat-label">FPS</span>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="startConversationBtn">
+                                <span class="btn-icon">🎥</span> 대화 시작
+                            </button>
+                            <button class="btn btn-danger" id="stopConversationBtn" disabled>
+                                <span class="btn-icon">⏹️</span> 정지
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: History -->
+                <div class="right-panel">
+                    <div class="card full-height-card">
+                        <div class="card-header">
+                            <h3>💬 대화 기록</h3>
+                            <button class="btn-icon-small" id="clearConversationHistoryBtn" title="기록 지우기">🗑️</button>
+                        </div>
+                        <div class="card-body scrollable-body" id="conversationHistoryContainer">
+                            <div class="history-empty">아직 대화 기록이 없습니다</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 5: Model Management -->
+    <div class="tab-content" id="tab-manage">
+        <div class="container-narrow">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalModelsCount">0</div>
+                    <div class="stat-label">저장된 모델</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="bestModelAccuracy">0%</div>
+                    <div class="stat-label">최고 정확도</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="averageAccuracy">0%</div>
+                    <div class="stat-label">평균 정확도</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>📦 모델 목록</h3>
+                    <div class="sort-toolbar">
+                        <select id="modelSortBy" class="custom-select-small">
+                            <option value="date">날짜순</option>
+                            <option value="accuracy">정확도순</option>
+                            <option value="samples">샘플수순</option>
+                            <option value="gestures">제스처수순</option>
+                            <option value="name">이름순</option>
+                        </select>
+                        <button id="modelSortOrder" class="btn-icon-small" data-order="desc">⬇️</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="model-grid" id="modelManagementList">
+                        <!-- Models injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 6: 3D Viewer -->
+    <div class="tab-content" id="tab-viewer3d">
+        <div class="grid-layout">
+            <!-- Left Panel: Main 3D Canvas -->
+            <div class="left-panel">
+                <!-- 3D Canvas - Main Display -->
+                <div class="card full-height-card">
+                    <div class="card-header">
+                        <h3>🎨 3D 손 스켈레톤</h3>
+                        <div class="status-badges">
+                            <div class="status-badge" id="statusBadge3D">
+                                <span class="status-indicator"></span>
+                                <span id="statusText3D">대기 중</span>
+                            </div>
+                            <div class="hand-detection-badge" id="handDetectionBadge3D">
+                                <span class="hand-icon">✋</span>
+                                <span id="handDetectionText3D">손 감지 대기</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding: 0; position: relative; height: calc(100vh - 400px); min-height: 600px;">
+                        <canvas id="viewer3dCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Hidden video element for MediaPipe -->
+                <video id="video3D" autoplay playsinline muted style="display: none;"></video>
+
+                <!-- Controls -->
+                <div class="glass-panel controls-panel">
+                    <div class="control-group">
+                        <div class="control-item">
+                            <div class="control-label">
+                                <span>✋</span>
+                                <span>손 아바타 표시</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="avatarToggle3D" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-label">
+                                <span>🎮</span>
+                                <span>3D 자동 회전</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoRotate3D">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-label">
+                                <span>🌐</span>
+                                <span>그리드 표시</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="gridToggle3D" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid-mini">
+                        <div class="stat-mini">
+                            <span class="stat-value" id="viewer3dFPS">0</span>
+                            <span class="stat-label">FPS</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-value" id="handsDetected3D">0</span>
+                            <span class="stat-label">감지된 손</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-value" id="landmarks3DCount">0</span>
+                            <span class="stat-label">랜드마크</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="start3DBtn">
+                            <span class="btn-icon">📹</span> 카메라 시작
+                        </button>
+                        <button class="btn btn-danger" id="stop3DBtn" disabled>
+                            <span class="btn-icon">⏹️</span> 정지
+                        </button>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="resetCamera3DBtn">
+                            <span class="btn-icon">🎥</span> 3D 카메라 리셋
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Settings & Info -->
+            <div class="right-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚙️ 3D 설정</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-group">
+                            <label class="setting-label">랜드마크 색상</label>
+                            <select id="landmarkColorSelect" class="custom-select">
+                                <option value="0xff4444">레드</option>
+                                <option value="0x00ff88">민트 그린</option>
+                                <option value="0x4fc3f7">스카이 블루</option>
+                                <option value="0xffd93d">골든 옐로우</option>
+                                <option value="0xb388ff">퍼플</option>
+                                <option value="0xff8a80">핑크</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <label class="setting-label">연결선 색상</label>
+                            <select id="connectionColorSelect" class="custom-select">
+                                <option value="0x00ff88">민트 그린</option>
+                                <option value="0x4fc3f7">스카이 블루</option>
+                                <option value="0xffd93d">골든 옐로우</option>
+                                <option value="0xb388ff">퍼플</option>
+                                <option value="0xff4444">레드</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <label class="setting-label">배경 색상</label>
+                            <select id="backgroundColorSelect3D" class="custom-select">
+                                <option value="0x0a0a0a">다크</option>
+                                <option value="0x1a1a2e">딥 블루</option>
+                                <option value="0x2d3436">슬레이트 그레이</option>
+                                <option value="0x1a1a1a">블랙</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <div class="slider-header">
+                                <label>랜드마크 크기</label>
+                                <span id="landmarkSizeValue">0.05</span>
+                            </div>
+                            <input type="range" id="landmarkSizeSlider" min="0.02" max="0.15" value="0.05" step="0.01" class="range-slider">
+                        </div>
+
+                        <div class="setting-group">
+                            <div class="slider-header">
+                                <label>3D 스케일</label>
+                                <span id="scaleValue">4</span>
+                            </div>
+                            <input type="range" id="scaleSlider" min="1" max="10" value="4" step="0.5" class="range-slider">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>ℹ️ 카메라 정보</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span>카메라 위치:</span>
+                            <span id="cameraPosition3D">0, 0, 5</span>
+                        </div>
+                        <div class="info-row">
+                            <span>시야각 (FOV):</span>
+                            <span id="cameraFOV">75°</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💡 사용 방법</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="help-text">
+                            1. "카메라 시작" 버튼을 클릭하세요<br>
+                            2. 카메라 앞에 손을 보여주세요<br>
+                            3. 3D 뷰어에서 손이 표시됩니다<br>
+                            4. 마우스로 드래그하여 각도 조절<br>
+                            5. 마우스 휠로 줌 인/아웃
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="targetModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎯 목표 데이터셋 수량 설정</h3>
+            </div>
+            <div class="modal-body">
+                <label class="modal-label">각 제스처당 목표 개수</label>
+                <input type="number" class="modal-input" id="targetInput" min="100" max="5000" step="50" value="800">
+                <small class="help-text">권장: 500-1000개</small>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelTargetBtn">취소</button>
+                <button class="btn btn-primary" id="confirmTargetBtn">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="autoSaveNotification">
+        <div class="modal-content notification">
+            <span class="icon">💾</span>
+            <span>데이터가 자동 저장되었습니다</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="{{ url_for('static', filename='js/model.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/viewer3d.js') }}"></script>
+    <script src="{{ url_for('static', filename='workspace.js') }}"></script>
+</body>
+
+</html>

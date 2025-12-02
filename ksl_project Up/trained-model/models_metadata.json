@@ -1,0 +1,20 @@
+{
+  "models": [
+    {
+      "name": "as",
+      "timestamp": "2025-11-27T07:15:26.781Z",
+      "accuracy": 100,
+      "gestures": 6,
+      "samples": 1260,
+      "epochs": 50
+    },
+    {
+      "name": "test1",
+      "timestamp": "2025-11-28T08:08:10.439Z",
+      "accuracy": 100,
+      "gestures": 4,
+      "samples": 881,
+      "epochs": 50
+    }
+  ]
+}
